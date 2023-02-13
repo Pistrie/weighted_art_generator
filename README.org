@@ -8,7 +8,7 @@ Each class of items has a rarity; common, rare, or epic. Commons have a weight o
 
 ** Usage
 
-Call ~WeightedArtGenerator.kickoff_scarcity/0~ to generate the images. It will only generate a third of the possible images in order to create the valued =artificial scarcity=
+Call ~WeightedArtGenerator.kickoff_scarcity/0~ to generate the images. It will only generate a third of the possible images in order to create the valued /artificial scarcity/
 
 #+begin_src elixir
 WeightedArtGenerator.kickoff_scarcity()
