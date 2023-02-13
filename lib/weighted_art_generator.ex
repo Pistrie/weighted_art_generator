@@ -4,12 +4,14 @@ defmodule WeightedArtGenerator do
   @rare_weight 2
   @epic_weight 1
 
+  # TODO add backgrounds
+
   @doc """
   This functions will create image configs, without checking the amount of possible combinations
   Use get_possible_combinations_amount to see the amount of possible combinations
   """
   def kickoff(amount \\ 1) do
-    weighted_image_layers= create_weight_tuples()
+    weighted_image_layers = create_weight_tuples()
 
     create_n_configs([], weighted_image_layers, amount)
     |> Enum.reduce(0, fn config, acc ->
@@ -25,7 +27,7 @@ defmodule WeightedArtGenerator do
   """
   def kickoff_scarcity do
     controlled_amount = get_possible_combinations_amount() / @common_weight
-    weighted_image_layers= create_weight_tuples()
+    weighted_image_layers = create_weight_tuples()
 
     create_n_configs([], weighted_image_layers, controlled_amount)
     |> Enum.reduce(0, fn config, acc ->
@@ -48,6 +50,7 @@ defmodule WeightedArtGenerator do
   # convert a layer config into an actual image
   defp config_to_image(config, nth_image) do
     if not File.exists?("generated_images/"), do: File.mkdir!("generated_images")
+
     System.cmd("convert", [
       "#{Enum.at(config, 0)}",
       "#{Enum.at(config, 1)}",
