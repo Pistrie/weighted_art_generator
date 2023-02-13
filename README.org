@@ -2,6 +2,8 @@
 
 This repository generates random art by combining a bunch of assets.
 
+[[file:img/preview.png]]
+
 ** Information
 
 Each class of items has a rarity; common, rare, or epic. Commons have a weight of 3, rare a weight of 2, and epic items have a weight of 1. This means that common items are roughly three times as likely to spawn compared to epic items.
