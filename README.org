@@ -1,1 +1,25 @@
 #+title: weighted_art_generator
+
+This repository generates random art by combining a bunch of assets.
+
+* Information
+
+Each class of items has a rarity; common, rare, or epic. Commons have a weight of 3, rare a weight of 2, and epic items have a weight of 1. This means that common items are roughly three times as likely to spawn compared to epic items.
+
+* Usage
+
+Call ~WeightedArtGenerator.kickoff_scarcity/0~ to generate the images. It will only generate a third of the possible images in order to create the valued ==artificial scarcity=
+
+#+begin_src elixir
+WeightedArtGenerator.kickoff_scarcity()
+#+end_src
+
+You can also call ~WeightedArtGenerator.kickoff/1~ to create as many images as the combination of assets allow
+
+#+begin_src elixir
+WeightedArtGenerator.kickoff(15)
+#+end_src
+
+* This is not meant as an NFT generator
+
+The idea of the generated images is the same, but this was made because the idea itself is interesting to me. NFTs are a scam, don't invest in them
