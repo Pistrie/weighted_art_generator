@@ -6,8 +6,54 @@ defmodule WeightedArtGenerator do
   @rare_weight 2
   @epic_weight 1
 
-  def save_copy_to_tmp do
-    Mogrify.open("pixel_punk_images/0_face/face_1.png") |> Mogrify.save()
+  @doc """
+  This functions will create image configs, without checking the amount of possible combinations
+  Use get_possible_combinations_amount to see the amount of possible combinations
+  """
+  def kickoff(amount \\ 1) do
+    list_options_with_weight = create_weight_tuples()
+
+    create_n_configs([], list_options_with_weight, amount)
+    |> Enum.reduce(0, fn config, acc ->
+      config_to_image(config, acc)
+      IO.puts("created #{acc}.png")
+      acc + 1
+    end)
+  end
+
+  @doc """
+  This function will create image configs, while keeping the artificial scarcity in mind
+  It divides by @common_weight in order to have less images than the actual possible combinations
+  """
+  def kickoff_scarcity do
+    controlled_amount = get_possible_combinations_amount() / @common_weight
+    list_options_with_weight = create_weight_tuples()
+
+    create_n_configs([], list_options_with_weight, controlled_amount)
+    |> Enum.reduce(0, fn config, acc ->
+      config_to_image(config, acc)
+      IO.puts("created #{acc}.png")
+      acc + 1
+    end)
+  end
+
+  defp config_to_image(config, nth_image) do
+    if not File.exists?("generated_images/"), do: File.mkdir!("generated_images")
+    System.cmd("convert", [
+      "#{Enum.at(config, 0)}",
+      "#{Enum.at(config, 1)}",
+      "-composite",
+      "generated_images/#{nth_image}.png"
+    ])
+
+    for layer <- 2..(length(config) - 1) do
+      System.cmd("convert", [
+        "generated_images/#{nth_image}.png",
+        "#{Enum.at(config, layer)}",
+        "-composite",
+        "generated_images/#{nth_image}.png"
+      ])
+    end
   end
 
   defp get_images(image_type, rarity) do
@@ -63,7 +109,8 @@ defmodule WeightedArtGenerator do
         weighted_hair_rare
       ])
 
-    [weighted_faces, weighted_eyes, weighted_hair, weighted_accessories] # the order matters
+    # the order matters
+    [weighted_faces, weighted_eyes, weighted_hair, weighted_accessories]
   end
 
   # create a config for the art to be used by Mogrify
@@ -71,29 +118,6 @@ defmodule WeightedArtGenerator do
     Enum.flat_map(list_options_with_weight, fn category ->
       ProbabilityWeight.weighted_random(category)
     end)
-  end
-
-  @doc """
-  This functions will create image configs, without checking the amount of possible combinations
-  Use get_possible_combinations_amount to see the amount of possible combinations
-  """
-  @spec kickoff(integer()) :: non_neg_integer
-  def kickoff(amount \\ 10) do
-    list_options_with_weight = create_weight_tuples()
-
-    create_n_configs([], list_options_with_weight, amount)
-  end
-
-  @doc """
-  This function will create image configs, while keeping the artificial scarcity in mind
-  It divides by @common_weight in order to have less images than the actual possible combinations
-  """
-  @spec kickoff_scarcity :: non_neg_integer
-  def kickoff_scarcity do
-    controlled_amount = get_possible_combinations_amount() / @common_weight
-    list_options_with_weight = create_weight_tuples()
-
-    create_n_configs([], list_options_with_weight, controlled_amount)
   end
 
   @doc """
