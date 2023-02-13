@@ -1,6 +1,4 @@
 defmodule WeightedArtGenerator do
-  # https://github.com/elixir-mogrify/mogrify/issues/39#issuecomment-287486610
-  # image = Mogrify.open("pixel_punk_images/0_face/face_1.png")
   @image_types [:accessory, :eye, :face, :hair]
   @common_weight 3
   @rare_weight 2
@@ -11,9 +9,9 @@ defmodule WeightedArtGenerator do
   Use get_possible_combinations_amount to see the amount of possible combinations
   """
   def kickoff(amount \\ 1) do
-    list_options_with_weight = create_weight_tuples()
+    weighted_image_layers= create_weight_tuples()
 
-    create_n_configs([], list_options_with_weight, amount)
+    create_n_configs([], weighted_image_layers, amount)
     |> Enum.reduce(0, fn config, acc ->
       config_to_image(config, acc)
       IO.puts("created #{acc}.png")
@@ -27,9 +25,9 @@ defmodule WeightedArtGenerator do
   """
   def kickoff_scarcity do
     controlled_amount = get_possible_combinations_amount() / @common_weight
-    list_options_with_weight = create_weight_tuples()
+    weighted_image_layers= create_weight_tuples()
 
-    create_n_configs([], list_options_with_weight, controlled_amount)
+    create_n_configs([], weighted_image_layers, controlled_amount)
     |> Enum.reduce(0, fn config, acc ->
       config_to_image(config, acc)
       IO.puts("created #{acc}.png")
@@ -37,6 +35,17 @@ defmodule WeightedArtGenerator do
     end)
   end
 
+  @doc """
+  Returns the amount of possible layer combinations
+  """
+  def get_possible_combinations_amount do
+    Enum.map(@image_types, fn type ->
+      Path.wildcard("pixel_punk_images/#{type}*/*.png") |> length()
+    end)
+    |> Enum.reduce(1, fn amount, acc -> acc * amount end)
+  end
+
+  # convert a layer config into an actual image
   defp config_to_image(config, nth_image) do
     if not File.exists?("generated_images/"), do: File.mkdir!("generated_images")
     System.cmd("convert", [
@@ -62,6 +71,7 @@ defmodule WeightedArtGenerator do
 
   # turn the file paths into weighted tuples so they can be used by ProbabilityWeight.weighted_random/2
   defp create_weight_tuples do
+    # create the different types with their rarity
     accessory_common = get_images(:accessory, :common)
     accessory_rare = get_images(:accessory, :rare)
     accessory_epic = get_images(:accessory, :epic)
@@ -72,6 +82,7 @@ defmodule WeightedArtGenerator do
     hair_common = get_images(:hair, :common)
     hair_rare = get_images(:hair, :rare)
 
+    # turn the list with rarities into weighted tuples
     weighted_accessory_common =
       Enum.map(accessory_common, fn image -> {image, @common_weight} end)
 
@@ -84,6 +95,7 @@ defmodule WeightedArtGenerator do
     weighted_hair_common = Enum.map(hair_common, fn image -> {image, @common_weight} end)
     weighted_hair_rare = Enum.map(hair_rare, fn image -> {image, @rare_weight} end)
 
+    # flatten the list according to their categories
     weighted_accessories =
       List.flatten([
         weighted_accessory_common,
@@ -110,26 +122,18 @@ defmodule WeightedArtGenerator do
       ])
 
     # the order matters
+    # lower layer to higher layer -> face, eyes, hair, accessories
     [weighted_faces, weighted_eyes, weighted_hair, weighted_accessories]
   end
 
-  # create a config for the art to be used by Mogrify
+  # create a config for the art to be used by imagemagick
   defp create_art_config(list_options_with_weight) do
     Enum.flat_map(list_options_with_weight, fn category ->
       ProbabilityWeight.weighted_random(category)
     end)
   end
 
-  @doc """
-  Returns the amount of possible layer combinations
-  """
-  def get_possible_combinations_amount do
-    Enum.map(@image_types, fn type ->
-      Path.wildcard("pixel_punk_images/#{type}*/*.png") |> length()
-    end)
-    |> Enum.reduce(1, fn amount, acc -> acc * amount end)
-  end
-
+  # create a certain amount of configurations depending on the parameter
   defp create_n_configs(configs, options, amount, new_config \\ [], generations_amount \\ 0)
 
   defp create_n_configs(configs, options, amount, new_config, generations_amount)
