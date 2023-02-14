@@ -1,16 +1,17 @@
 defmodule WeightedArtGenerator do
-  @image_types [:accessory, :eye, :face, :hair]
+  @image_types [:background, :accessory, :eye, :face, :hair]
   @common_weight 3
   @rare_weight 2
   @epic_weight 1
-
-  # TODO add backgrounds
 
   @doc """
   This functions will create image configs, without checking the amount of possible combinations
   Use get_possible_combinations_amount to see the amount of possible combinations
   """
   def kickoff(amount \\ 1) do
+    if get_possible_combinations_amount() < amount,
+      do: raise("supplied amount parameter is larger than the amount of possible combinations")
+
     weighted_image_layers = create_weight_tuples()
 
     create_n_configs([], weighted_image_layers, amount)
@@ -42,7 +43,12 @@ defmodule WeightedArtGenerator do
   """
   def get_possible_combinations_amount do
     Enum.map(@image_types, fn type ->
-      Path.wildcard("pixel_punk_images/#{type}*/*.png") |> length()
+      if type != :background do
+        Path.wildcard("pixel_punk_images/#{type}*/*.png") |> length()
+      else
+        # return one otherwise it returns nil, and you cant multiply by nil
+        1
+      end
     end)
     |> Enum.reduce(1, fn amount, acc -> acc * amount end)
   end
@@ -51,6 +57,7 @@ defmodule WeightedArtGenerator do
   defp config_to_image(config, nth_image) do
     if not File.exists?("generated_images/"), do: File.mkdir!("generated_images")
 
+    # first layering, creates the file in generated_images/
     System.cmd("convert", [
       "#{Enum.at(config, 0)}",
       "#{Enum.at(config, 1)}",
@@ -58,6 +65,7 @@ defmodule WeightedArtGenerator do
       "generated_images/#{nth_image}.png"
     ])
 
+    # rest of the layering based on the first one
     for layer <- 2..(length(config) - 1) do
       System.cmd("convert", [
         "generated_images/#{nth_image}.png",
@@ -75,6 +83,7 @@ defmodule WeightedArtGenerator do
   # turn the file paths into weighted tuples so they can be used by ProbabilityWeight.weighted_random/2
   defp create_weight_tuples do
     # create the different types with their rarity
+    background_common = get_images(:background, :common)
     accessory_common = get_images(:accessory, :common)
     accessory_rare = get_images(:accessory, :rare)
     accessory_epic = get_images(:accessory, :epic)
@@ -86,6 +95,9 @@ defmodule WeightedArtGenerator do
     hair_rare = get_images(:hair, :rare)
 
     # turn the list with rarities into weighted tuples
+    weighted_background_common =
+      Enum.map(background_common, fn image -> {image, @common_weight} end)
+
     weighted_accessory_common =
       Enum.map(accessory_common, fn image -> {image, @common_weight} end)
 
@@ -99,6 +111,11 @@ defmodule WeightedArtGenerator do
     weighted_hair_rare = Enum.map(hair_rare, fn image -> {image, @rare_weight} end)
 
     # flatten the list according to their categories
+    weighted_backgrounds =
+      List.flatten([
+        weighted_background_common
+      ])
+
     weighted_accessories =
       List.flatten([
         weighted_accessory_common,
@@ -125,15 +142,30 @@ defmodule WeightedArtGenerator do
       ])
 
     # the order matters
-    # lower layer to higher layer -> face, eyes, hair, accessories
-    [weighted_faces, weighted_eyes, weighted_hair, weighted_accessories]
+    # lower layer to higher layer -> background, face, eyes, hair, accessories
+    [
+      weighted_backgrounds,
+      weighted_faces,
+      weighted_eyes,
+      weighted_hair,
+      weighted_accessories
+    ]
   end
 
   # create a config for the art to be used by imagemagick
-  defp create_art_config(list_options_with_weight) do
-    Enum.flat_map(list_options_with_weight, fn category ->
-      ProbabilityWeight.weighted_random(category)
-    end)
+  defp create_art_config(list_with_weighted_categories) do
+    # remove the background
+    [backgrounds | categories] = list_with_weighted_categories
+
+    config =
+      for category <- categories do
+        ProbabilityWeight.weighted_random(category)
+      end
+
+    # add the background afterwards in order to not create a huge amount of possible configs
+    background = ProbabilityWeight.weighted_random(backgrounds)
+
+    [background | config]
   end
 
   # create a certain amount of configurations depending on the parameter
