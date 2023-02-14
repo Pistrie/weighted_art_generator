@@ -10,18 +10,34 @@ Each class of items has a rarity; common, rare, or epic. Commons have a weight o
 
 ** Usage
 
-Call ~WeightedArtGenerator.kickoff_scarcity/0~ to generate the images. It will only generate a third of the possible images in order to create the valued /artificial scarcity/
+*** Mix tasks
 
-#+begin_src elixir
-WeightedArtGenerator.kickoff_scarcity()
+Run either the ~kickoff~ or the ~kickoff.scarcity~ tasks.
+
+~kickoff~ requires a parameter for the amount of images to be generated.
+#+begin_src bash
+mix kickoff 10
 #+end_src
 
-You can also call ~WeightedArtGenerator.kickoff/1~ to create as many images as the combination of assets allow
+~kickoff.scarcity~ does not have any parameters. It will only generate a third of the possible images in order to create the valued /artificial scarcity/.
+#+begin_src bash
+mix kickoff.scarcity
+#+end_src
+
+*** Code
+
+Call ~WeightedArtGenerator.kickoff/1~ to create as many images as the combination of assets allows.
 
 #+begin_src elixir
 WeightedArtGenerator.kickoff(15)
 #+end_src
 
+You can also call ~WeightedArtGenerator.kickoff_scarcity/0~ to generate the images.
+
+#+begin_src elixir
+WeightedArtGenerator.kickoff_scarcity()
+#+end_src
+
 ** This is not meant as an NFT generator
 
-The idea of the generated images is the same, but this was made because the idea itself is interesting to me. NFTs are a scam, don't invest in them
+The idea of the generated images is the same, but this was made because the idea itself is interesting to me. NFTs are a scam, don't invest in them.
