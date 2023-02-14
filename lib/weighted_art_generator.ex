@@ -53,6 +53,8 @@ defmodule WeightedArtGenerator do
     |> Enum.reduce(1, fn amount, acc -> acc * amount end)
   end
 
+  # TODO figure out whether elixir waits for imagemagick to finish. i suspect that it will move on to the next layer before the current one is done
+
   # convert a layer config into an actual image
   defp config_to_image(config, nth_image) do
     if not File.exists?("generated_images/"), do: File.mkdir!("generated_images")
