@@ -12,7 +12,8 @@ defmodule Mix.Tasks.Kickoff.Scarcity do
   ```
   """
 
-  def run(_) do
-    WeightedArtGenerator.kickoff_scarcity()
+  def run([n_workers | _]) do
+    {n_workers, ""} = Integer.parse(n_workers, 10)
+    WeightedArtGenerator.kickoff_scarcity(n_workers)
   end
 end

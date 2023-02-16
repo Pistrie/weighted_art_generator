@@ -26,15 +26,29 @@ defmodule WeightedArtGenerator do
   This function will create image configs, while keeping the artificial scarcity in mind
   It divides by @common_weight in order to have less images than the actual possible combinations
   """
-  def kickoff_scarcity do
+  def kickoff_scarcity(n_workers) do
+    # setup
+    workers = for i <- 0..(n_workers - 1), into: %{}, do: {i, ArtGeneratorWorker.start()}
     controlled_amount = get_possible_combinations_amount() / @common_weight
     weighted_image_layers = create_weight_tuples()
+    configs = create_n_configs([], weighted_image_layers, controlled_amount)
 
-    create_n_configs([], weighted_image_layers, controlled_amount)
-    |> Enum.reduce(0, fn config, acc ->
-      config_to_image(config, acc)
-      IO.puts("created #{acc}.png")
-      acc + 1
+    # give the workers their tasks until there are no more tasks
+    Enum.each(0..(length(configs) - 1), fn config_index ->
+      i_worker = rem(config_index, n_workers)
+      worker = Map.get(workers, i_worker)
+      config = Enum.at(configs, config_index)
+      send(worker, {:create_image, {config, config_index}})
+    end)
+
+    # terminate all the workers
+    workers
+    |> Enum.each(fn {_, w} ->
+      send(w, {:terminate, self()})
+
+      receive do
+        {:done} -> {:nothing}
+      end
     end)
   end
 
@@ -56,7 +70,7 @@ defmodule WeightedArtGenerator do
   # TODO figure out whether elixir waits for imagemagick to finish. i suspect that it will move on to the next layer before the current one is done
 
   # convert a layer config into an actual image
-  defp config_to_image(config, nth_image) do
+  def config_to_image(config, nth_image) do
     if not File.exists?("generated_images/"), do: File.mkdir!("generated_images")
 
     # first layering, creates the file in generated_images/
