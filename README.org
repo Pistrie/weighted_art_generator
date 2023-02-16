@@ -25,7 +25,7 @@ mix kickoff.scarcity
 mix kickoff.scarcity 400
 #+end_example
 
-~possible_combinations~ prints the amount of possible combinations that are possible.
+~possible_combinations~ prints the amount of combinations that are possible.
 #+begin_example
 mix possible_combinations
 #+end_example
